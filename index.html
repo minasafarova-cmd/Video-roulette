@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Roulette BY NXTEAM</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --glass-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #050505 url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Анимация плавающего фона для реализма */
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%);
+            z-index: -1;
+        }
+
+        .glass-container {
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px) saturate(120%);
+            -webkit-backdrop-filter: blur(35px) saturate(120%);
+            border-top: 1px solid rgba(255, 255, 255, 0.5);
+            border-left: 1px solid rgba(255, 255, 255, 0.4);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            animation: containerEnter 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* Эффект блика по стеклу (Анимация) */
+        .glass-container::before {
+            content: "";
+            position: absolute;
+            top: -150%; left: -150%;
+            width: 300%; height: 300%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 50%);
+            animation: shineGlass 12s infinite linear;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes shineGlass {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(10%, 10%) rotate(360deg); }
+        }
+
+        @keyframes containerEnter {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .header {
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            letter-spacing: 2px;
+            background: linear-gradient(to right, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            padding: 10px 22px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.6), 0 0 15px rgba(0,0,0,0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.4s ease;
+        }
+
+        .status-badge.pulse {
+            animation: pulseGlow 1.5s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 10px rgba(255, 193, 7, 0.2), inset 0 2px 5px rgba(0,0,0,0.6); }
+            to { box-shadow: 0 0 25px rgba(255, 193, 7, 0.8), inset 0 2px 5px rgba(0,0,0,0.6); border-color: rgba(255, 193, 7, 0.6); }
+        }
+
+        .video-wrapper {
+            flex-grow: 1;
+            display: flex;
+            position: relative;
+            padding: 20px;
+            gap: 20px;
+            z-index: 1;
+        }
+
+        .video-box {
+            flex: 1;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 0 50px rgba(0,0,0,1), 0 15px 35px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Анимация загрузки для видео */
+        .video-box.remote::before {
+            content: 'ОЖИДАНИЕ СЕТИ...';
+            position: absolute;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 2px;
+            z-index: 0;
+        }
+
+        .video-box.local {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 320px;
+            height: 240px;
+            flex: none;
+            z-index: 10;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), inset 0 0 20px rgba(255,255,255,0.05);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .video-box.local:hover {
+            transform: scale(1.05) translateY(-5px);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        video.active {
+            opacity: 1;
+        }
+
+        .watermark {
+            position: absolute;
+            bottom: 15px;
+            left: 20px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 800;
+            pointer-events: none;
+            text-shadow: 0 2px 6px rgba(0,0,0,1);
+            letter-spacing: 2px;
+            z-index: 2;
+            background: rgba(0,0,0,0.4);
+            padding: 4px 10px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+        }
+
+        .media-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .media-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4), inset 0 0 10px rgba(255,255,255,0.1);
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .media-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .media-btn.disabled {
+            background: rgba(255, 60, 60, 0.4);
+            border-color: rgba(255, 100, 100, 0.8);
+            box-shadow: 0 0 15px rgba(255, 60, 60, 0.5);
+            color: #ffcccc;
+        }
+
+        .controls {
+            padding: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1;
+            position: relative;
+        }
+
+        button.action-btn {
+            padding: 16px 50px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            cursor: pointer;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), inset 0 2px 5px rgba(255,255,255,0.2);
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button.action-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1));
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 2px 8px rgba(255,255,255,0.3);
+        }
+
+        button.action-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        button.action-btn.skip {
+            background: linear-gradient(135deg, rgba(0, 140, 255, 0.4), rgba(0, 80, 255, 0.1));
+            border-color: rgba(100, 200, 255, 0.6);
+        }
+
+        button.action-btn.skip:hover {
+            background: linear-gradient(135deg, rgba(0, 160, 255, 0.6), rgba(0, 100, 255, 0.2));
+            box-shadow: 0 10px 30px rgba(0, 120, 255, 0.5);
+        }
+
+        button.action-btn.danger {
+            border-color: rgba(255, 80, 80, 0.6);
+            background: linear-gradient(135deg, rgba(255, 50, 50, 0.3), rgba(255, 0, 0, 0.1));
+        }
+
+        button.action-btn.danger:hover {
+            background: linear-gradient(135deg, rgba(255, 80, 80, 0.5), rgba(255, 0, 0, 0.2));
+            box-shadow: 0 10px 30px rgba(255, 50, 50, 0.4);
+        }
+
+        .hidden { display: none !important; }
+
+        svg { width: 20px; height: 20px; fill: currentColor; }
+
+        /* Адаптация под все мобильные устройства */
+        @media (max-width: 850px) {
+            .glass-container {
+                width: 100%; height: 100vh;
+                border-radius: 0; border: none;
+            }
+            .video-wrapper {
+                padding: 0;
+            }
+            .video-box.remote {
+                border-radius: 0; border: none;
+            }
+            .video-box.local {
+                width: 120px; height: 160px;
+                bottom: 20px; right: 20px;
+                border-radius: 16px;
+                box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+            }
+            .header h1 { font-size: 20px; }
+            .status-badge { font-size: 11px; padding: 8px 15px; }
+            button.action-btn { padding: 14px 20px; font-size: 13px; }
+            .media-btn { width: 35px; height: 35px; }
+            svg { width: 16px; height: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glass-container">
+        <div class="header">
+            <h1>NXTEAM ROULETTE</h1>
+            <div id="status" class="status-badge">КАМЕРА...</div>
+        </div>
+
+        <div class="video-wrapper">
+            <div class="video-box remote">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="watermark">СОБЕСЕДНИК</div>
+            </div>
+            
+            <div class="video-box local">
+                <div class="media-controls">
+                    <div id="btnMic" class="media-btn" title="Микрофон">
+                        <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                    </div>
+                    <div id="btnCam" class="media-btn" title="Камера">
+                        <svg viewBox="0 0 24 24"><path d="M15 8v8H5V8h10m1-2H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4V7c0-.55-.45-1-1-1z"/></svg>
+                    </div>
+                </div>
+                <video id="localVideo" autoplay playsinline muted></video>
+                <div class="watermark">ВЫ</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="btnStart" class="action-btn hidden">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> СТАРТ
+            </button>
+            <button id="btnNext" class="action-btn skip hidden">
+                СКИП <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+            <button id="btnStop" class="action-btn danger hidden">
+                СТОП <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const statusEl = document.getElementById('status');
+        const btnStart = document.getElementById('btnStart');
+        const btnNext = document.getElementById('btnNext');
+        const btnStop = document.getElementById('btnStop');
+        const btnMic = document.getElementById('btnMic');
+        const btnCam = document.getElementById('btnCam');
+
+        let localStream;
+        let peer;
+        let currentCall;
+        let isSearching = false;
+        let searchInterval;
+
+        const POOL_SIZE = 30; // Уменьшен для повышения шансов коннекта
+        const PREFIX = "nxt-gl-";
+        const myPeerId = PREFIX + (Math.floor(Math.random() * POOL_SIZE) + 1);
+
+        let isMicEnabled = true;
+        let isCamEnabled = true;
+
+        function updateStatus(text, color = "rgba(0,0,0,0.5)", pulse = false) {
+            statusEl.innerText = text;
+            statusEl.style.background = color;
+            if (pulse) statusEl.classList.add('pulse');
+            else statusEl.classList.remove('pulse');
+        }
+
+        // Запрос камеры с фиксом для iOS/Android
+        navigator.mediaDevices.getUserMedia({ 
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }, 
+            audio: true 
+        }).then(stream => {
+            localStream = stream;
+            localVideo.srcObject = stream;
+            localVideo.onloadedmetadata = () => { localVideo.play(); localVideo.classList.add('active'); };
+            updateStatus("ГОТОВ К ПОИСКУ", "rgba(40, 167, 69, 0.6)");
+            btnStart.classList.remove('hidden');
+            initPeer();
+        }).catch(err => {
+            updateStatus("ОШИБКА КАМЕРЫ", "rgba(220, 53, 69, 0.8)");
+            alert("Разрешите доступ к камере и микрофону в настройках браузера.");
+        });
+
+        btnMic.addEventListener('click', () => {
+            if (!localStream) return;
+            isMicEnabled = !isMicEnabled;
+            localStream.getAudioTracks()[0].enabled = isMicEnabled;
+            btnMic.classList.toggle('disabled', !isMicEnabled);
+            btnMic.innerHTML = isMicEnabled 
+                ? '<svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>'
+                : '<svg viewBox="0 0 24 24"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02 3.28l-1.46-1.46c.15-.32.24-.68.24-1.06V5c0-1.66-1.34-3-3-3S8 3.34 8 5v.22L5.61 2.81 4.2 4.22l15.58 15.58 1.41-1.41-6.21-6.21zM11 5c0-.55.45-1 1-1s1 .45 1 1v5.17l-2-2V5zM4.27 7.3l2.06 2.06C5.51 10.13 5 11.02 5 12c0 3.53 2.61 6.43 6 6.92V22h2v-3.08c1.39-.2 2.67-.78 3.73-1.6l2.05 2.05 1.41-1.41L5.68 5.89 4.27 7.3z"/></svg>';
+        });
+
+        btnCam.addEventListener('click', () => {
+            if (!localStream) return;
+            isCamEnabled = !isCamEnabled;
+            localStream.getVideoTracks()[0].enabled = isCamEnabled;
+            btnCam.classList.toggle('disabled', !isCamEnabled);
+            localVideo.style.opacity = isCamEnabled ? 1 : 0.3;
+            btnCam.innerHTML = isCamEnabled 
+                ? '<svg viewBox="0 0 24 24"><path d="M15 8v8H5V8h10m1-2H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4V7c0-.55-.45-1-1-1z"/></svg>'
+                : '<svg viewBox="0 0 24 24"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2zM5 16V8h1.73l8 8H5z"/></svg>';
+        });
+
+        // Инициализация PeerJS с STUN серверами Google для работы на разных устройствах и сетях
+        function initPeer() {
+            peer = new Peer(myPeerId, {
+                host: '0.peerjs.com',
+                port: 443,
+                secure: true,
+                config: {
+                    'iceServers': [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                }
+            });
+
+            peer.on('error', err => {
+                if (err.type === 'peer-unavailable' && isSearching) {
+                    setTimeout(scanForStranger, 300); // Быстрый перебор пула
+                }
+            });
+
+            peer.on('call', call => {
+                isSearching = false;
+                clearTimeout(searchInterval);
+                call.answer(localStream);
+                setupCallEvents(call);
+            });
+        }
+
+        function scanForStranger() {
+            if (!isSearching) return;
+            const targetId = PREFIX + (Math.floor(Math.random() * POOL_SIZE) + 1);
+            if (targetId === myPeerId) { scanForStranger(); return; }
+
+            const call = peer.call(targetId, localStream);
+            if (call) {
+                setupCallEvents(call);
+                // Увеличенный таймаут для мобильных сетей (4.5 сек)
+                searchInterval = setTimeout(() => {
+                    if (isSearching) { call.close(); scanForStranger(); }
+                }, 4500);
+            }
+        }
+
+        function setupCallEvents(call) {
+            currentCall = call;
+            call.on('stream', remoteStream => {
+                clearTimeout(searchInterval);
+                isSearching = false;
+                remoteVideo.srcObject = remoteStream;
+                remoteVideo.onloadedmetadata = () => { 
+                    remoteVideo.play(); 
+                    remoteVideo.classList.add('active'); 
+                };
+                updateStatus("СОЕДИНЕНИЕ УСТАНОВЛЕНО", "rgba(0, 123, 255, 0.7)");
+                btnStart.classList.add('hidden');
+                btnNext.classList.remove('hidden');
+                btnStop.classList.remove('hidden');
+            });
+            call.on('close', () => {
+                remoteVideo.classList.remove('active');
+                setTimeout(() => remoteVideo.srcObject = null, 500);
+                if (!isSearching) startSearch();
+            });
+        }
+
+        function startSearch() {
+            if(currentCall) currentCall.close();
+            remoteVideo.classList.remove('active');
+            setTimeout(() => remoteVideo.srcObject = null, 500);
+            isSearching = true;
+            updateStatus("ПОИСК...", "rgba(255, 193, 7, 0.6)", true);
+            btnStart.classList.add('hidden');
+            btnNext.classList.add('hidden');
+            btnStop.classList.remove('hidden');
+            scanForStranger();
+        }
+
+        function skipPerson() {
+            if(currentCall) currentCall.close();
+            startSearch();
+        }
+
+        function endAll() {
+            if(currentCall) currentCall.close();
+            currentCall = null;
+            remoteVideo.classList.remove('active');
+            setTimeout(() => remoteVideo.srcObject = null, 500);
+            isSearching = false;
+            clearTimeout(searchInterval);
+            updateStatus("ОСТАНОВЛЕНО", "rgba(0,0,0,0.6)");
+            btnStart.classList.remove('hidden');
+            btnNext.classList.add('hidden');
+            btnStop.classList.add('hidden');
+        }
+
+        btnStart.addEventListener('click', startSearch);
+        btnNext.addEventListener('click', skipPerson);
+        btnStop.addEventListener('click', endAll);
+    </script>
+</body>
+</html>
